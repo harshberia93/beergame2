@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>The Beer Game</title>
+        <style type="text/css">
+            @import url('{{ STATIC_URL }}css/bgame.css');
+        </style>
+        {% block extra_headers %} 
+        {% endblock %}
+    </head>
+    <body>
+        <div id="content-wrapper">
+            {% block content %}
+            {% endblock %}
+        </div>
+        <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.5.0/jquery.min.js"></script>
+    </body>
+</html>

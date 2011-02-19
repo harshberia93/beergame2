@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block content %}
+    <div id="header">
+        <div id="top-nav">
+            <a href="">Sign In</a>
+        </div>
+        <img src="{{ STATIC_URL }}img/beergame-logo.gif" />
+    </div>
+    <table id="game-listing">
+        <tr>
+            <th>Game</th>
+            <th>Click Role to Begin</th>
+            <th>Admin</th>
+        </tr>
+    {% for game in games %}
+        <tr class="{% cycle 'odd' 'even' %}">
+            <td class="group-name">{{ game.group_name }}</td>
+            <td>Factory | Distributor | Wholesaler | Retailer</td>
+            <td>[Chart] | [Spreadsheet]</td>
+        </tr>
+    {% endfor %}
+    </table>
+{% endblock %}

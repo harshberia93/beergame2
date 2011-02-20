@@ -55,10 +55,22 @@
             data: data,
             dataType: dataType,
             error: function(xhr, textStatus, error) {
-                console.log(error);
-                console.log('error has occurred');
+
+                if (textStatus === 'timeout') {
+                    $.jGrowl('ERROR: Could not connect to server.  Please check your internet connection and try again.');
+                } else if (error === 'BAD REQUEST') {
+                    $.jGrowl('ERROR: ' + xhr.responseText, {position: 'center'}); 
+                }
+                
+                console.log('####error has occurred####');
+                console.log('error:' + error);
+                console.log('textStatus:' + textStatus);
+                console.log('xhr.status:' + xhr.status);
+                console.log('xhr.statusText:' + xhr.statusText);
+                console.log('xhr.getAllResponseHeaders:' + xhr.getAllResponseHeaders);
             },
             success: callback,
+            timeout: 3000,
             type: method,
             url: url
         });

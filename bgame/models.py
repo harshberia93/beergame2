@@ -57,7 +57,7 @@ class Game(models.Model):
     one of four roles: Factory, Distributor, Wholesaler, or Retailer.
     """
     group_name = models.CharField(max_length=40, unique=True)
-    game_slug = models.SlugField(unique=True)
+    game_slug = models.SlugField(unique=True, blank=True)
     created = models.DateTimeField(auto_now_add=True)
     start_time = models.DateTimeField(null=True, blank=True)
     end_time = models.DateTimeField(blank=True, null=True)

@@ -1,4 +1,6 @@
 from datetime import datetime
+from django.db import IntegrityError
+from django.core.exceptions import ValidationError
 from piston.handler import BaseHandler, AnonymousBaseHandler
 from piston.utils import rc, require_mime, require_extended
 
@@ -22,14 +24,31 @@ class GameHandler(AnonymousBaseHandler):
         return base.all()
 
     def create(self, request):
-        print request.content_type
-        print request.data
         attrs = request.data
         game = Game(group_name=attrs['group_name'],
                     num_periods=attrs['num_periods']) 
-        game.save()
+
+        try:
+            game.validate_unique()
+        except ValidationError:
+            resp = rc.BAD_REQUEST
+            resp.content = 'Could not create game because name is not unique.'
+            return resp
+
+        try:
+            game.clean_fields()
+        except ValidationError as e:
+            resp = rc.BAD_REQUEST
+            resp.content = 'Invalid values for game.'
+            return resp
+
+        try:
+            game.save()
+        except:
+            resp = rc.BAD_REQUEST
+            resp.content = 'Unable to save game.'
+            return resp
         
-        resp = rc.CREATED 
         return rc.CREATED 
 
 class PlayerHandler(AnonymousBaseHandler):

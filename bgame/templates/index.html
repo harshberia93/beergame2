@@ -1,11 +1,12 @@
 {% extends "base.html" %}
-{% block content %}
-    <div id="header">
-        <div id="top-nav">
-            <a href="">Sign In</a>
-        </div>
-        <img src="{{ STATIC_URL }}img/beergame-logo.gif" />
+
+{% block header-top %}
+    <div id="top-nav">
+        <a href="">Sign In</a>
     </div>
+{% endblock %}
+
+{% block content %}
     <table id="game-listing">
         <tr>
             <th>Game</th>
@@ -15,9 +16,17 @@
     {% for game in games %}
         <tr class="{% cycle 'odd' 'even' %}">
             <td class="group-name">{{ game.group_name }}</td>
-            <td>Factory | Distributor | Wholesaler | Retailer</td>
+            <td>
+                {% for role in roles %}
+                    <a href="{% url game game.game_slug role.0 %}">{{ role.1 }}</a>
+                    {% if not forloop.last %} | {% endif %}
+                {% endfor %}
             <td>[Chart] | [Spreadsheet]</td>
         </tr>
     {% endfor %}
     </table>
+{% endblock %}
+
+{% block pre-end-body %}
+<script type="text/javascript" src="{{ STATIC_URL }}/js/bgame.js"></script>
 {% endblock %}

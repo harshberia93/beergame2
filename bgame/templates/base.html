@@ -9,10 +9,22 @@
         {% endblock %}
     </head>
     <body>
-        <div id="content-wrapper">
-            {% block content %}
-            {% endblock %}
+        <div id="wrapper">
+            <div id="header">
+                {% block header-top %}
+                {% endblock %}
+
+                <img src="{{ STATIC_URL }}img/beergame-logo.gif" />
+
+                {% block header-bottom %}
+                {% endblock %}
+
+                {% block content %}
+                {% endblock %}
+            </div>
         </div>
         <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.5.0/jquery.min.js"></script>
+        {% block pre-end-body %}
+        {% endblock %}
     </body>
 </html>

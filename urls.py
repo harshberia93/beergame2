@@ -1,5 +1,4 @@
 from django.conf.urls.defaults import patterns, include, url
-from django.views.generic.simple import direct_to_template
 
 urlpatterns = patterns('',
     # Examples:
@@ -11,7 +10,7 @@ urlpatterns = patterns('',
 
     # Uncomment the next line to enable the admin:
     # url(r'^admin/', include(admin.site.urls)),
-    url(r'^$', include('beergame.bgame.urls')),
-    url(r'^b/', include('beergame.bgame.urls')),
+    url(r'^$', 'beergame.bgame.views.index', name='index'),
+    url(r'^g/', include('beergame.bgame.urls')),
     url(r'^api/', include('beergame.api.urls')),
 )

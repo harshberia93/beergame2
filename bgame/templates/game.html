@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+{{ player.role|title }}
+{{ period.number }}
+
+<div id="next_period">
+    <input type="button" id="next_period_btn" class="button" value="{% ifequal period.number 0 %}Start game{% endifequal %}{% ifnotequal period.number 0 %}Start next period{% endifnotequal %}" />
+</div>
+
+{% endblock %}
+
+{% block pre-end-body %}
+<script type="text/javascript" src="{{ STATIC_URL }}/js/bgame.js"></script>
+{% endblock %}

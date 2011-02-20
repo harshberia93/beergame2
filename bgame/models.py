@@ -1,11 +1,12 @@
 from django.db import models
+from django.template.defaultfilters import slugify
 
 # roles for Player
 ROLES = (
-            ('F','Factory'),
-            ('D','Distributor'),
-            ('W','Wholesaler'),
-            ('R','Retailer')
+            ('factory','Factory'),
+            ('distributor','Distributor'),
+            ('wholesaler','Wholesaler'),
+            ('retailer','Retailer')
         )
 
 
@@ -16,7 +17,7 @@ class Player(models.Model):
     or Retailer.
     """
     game = models.ForeignKey('Game')
-    role = models.CharField(max_length=1, choices=ROLES)
+    role = models.CharField(max_length=11, choices=ROLES)
     current_period = models.IntegerField(default=0)
     STATES = (
                 ('not_started','Not Started'),
@@ -56,6 +57,7 @@ class Game(models.Model):
     one of four roles: Factory, Distributor, Wholesaler, or Retailer.
     """
     group_name = models.CharField(max_length=40, unique=True)
+    game_slug = models.SlugField(unique=True)
     created = models.DateTimeField(auto_now_add=True)
     start_time = models.DateTimeField(null=True, blank=True)
     end_time = models.DateTimeField(blank=True, null=True)
@@ -68,13 +70,14 @@ class Game(models.Model):
         """
         is_new = self.pk is None
 
-        ret = super(Game, self).save(*args, **kwargs)
+        self.game_slug = slugify(self.group_name)
+
+        super(Game, self).save(*args, **kwargs)
 
         if is_new:
             for role in ROLES:
                 Player(role=role[0], game=self).save()
 
-        return ret
 
     def __unicode__(self):
         return '%s' % (self.group_name)

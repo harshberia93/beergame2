@@ -7,26 +7,13 @@
 {% endblock %}
 
 {% block content %}
-    <table id="game-listing">
-        <tr>
-            <th>Game</th>
-            <th>Click Role to Begin</th>
-            <th>Admin</th>
-        </tr>
-    {% for game in games %}
-        <tr class="{% cycle 'odd' 'even' %}">
-            <td class="group-name">{{ game.group_name }}</td>
-            <td>
-                {% for role in roles %}
-                    <a href="{% url game game.game_slug role.0 %}">{{ role.1 }}</a>
-                    {% if not forloop.last %} | {% endif %}
-                {% endfor %}
-            <td>[Chart] | [Spreadsheet]</td>
-        </tr>
-    {% endfor %}
-    </table>
-{% endblock %}
-
-{% block pre-end-body %}
-<script type="text/javascript" src="{{ STATIC_URL }}/js/bgame.js"></script>
+    <div id="add-game">
+        <ul id="add-game-form"> 
+            {{ form.as_ul }}
+            <li><input type="submit" id="add-game-btn" value="Add Game" /></li>
+        </ul>
+    </div>
+    <div id="game-listing-wrapper">
+        {% include "game_listing.html" %}
+    </div>
 {% endblock %}

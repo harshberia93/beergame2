@@ -1,0 +1,19 @@
+<table id="game-listing">
+    <tr>
+        <th>Group</th>
+        <th>Click Role to Begin</th>
+        <th>Reports</th>
+    </tr>
+{% for game in games %}
+    <tr class="game {% cycle 'odd' 'even' %}">
+        <td class="group-name">{{ game.group_name }}</td>
+        <td>
+            {% for role in roles %}
+                <a href="{% url game game.game_slug role.0 %}">{{ role.1 }}</a>
+                {% if not forloop.last %} | {% endif %}
+            {% endfor %}
+        <td>[Chart] | [Spreadsheet]</td>
+    </tr>
+{% endfor %}
+</table>
+

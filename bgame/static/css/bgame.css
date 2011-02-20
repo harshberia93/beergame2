@@ -2,6 +2,10 @@ body {
     font-family: sans-serif;
 }
 
+body a {
+    color: #000000;
+}
+
 div#header {
     text-align: center;
 }
@@ -18,6 +22,18 @@ div#wrapper {
     width: 60%;  
 }
 
+ul#add-game-form {
+    padding: 0;
+}
+
+ul#add-game-form li {
+    display: inline; 
+}
+
+input#id_num_periods {
+    width: 2em; 
+}
+
 /* Lists the available games on the frontpage */
 table#game-listing {
     border-spacing: 0;
@@ -30,8 +46,12 @@ table#game-listing th {
     padding: 4px;
 }
 
+.hidden { 
+    display: none;
+}
+
 table#game-listing td {
-    padding: 4px;
+    padding: 6px 4px 6px 4px;
     text-align: center;
 }
 

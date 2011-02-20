@@ -79,27 +79,30 @@ class PeriodHandler(AnonymousBaseHandler):
         #  + not_started: means teams haven't started
         players = Player.objects.filter(game__game_slug=game_slug)
 
+        player = players.get(role=role)
+        cur_period = player.current_period + 1
+
         other_players = players.exclude(role=role)
         for o_player in other_players:
-            if not o_player.current_period == cur_period:
-                if o_player.state != 'order':
-                    resp = rc.BAD_REQUEST
-                    resp.write('Not allowed to create a period') 
-                    return resp 
+            if player.current_period != 0: 
+                if not o_player.current_period == cur_period:
+                    if o_player.current_state != 'order':
+                        resp = rc.BAD_REQUEST
+                        resp.write('Not allowed to create a period.') 
+                        return resp 
 
         # increment the period
         player = players.get(role=role)
-        cur_period = player.current_period + 1
         player.current_period = cur_period
         player.save()
 
-        o_per = Period.object.filter(player__game__game_slug=game_slug)
+        o_per = Period.objects.filter(player__game__game_slug=game_slug)
         o_per = o_per.filter(player__role=role).order_by('-number')[0]
         o_per.completion_time = datetime.now()
         o_per.save()
 
         n_per = Period(number=cur_period, player=o_per.player, inventory=o_per.inventory,
-            backlog=o_per.backlog, order_1=o_per.order_1, order_2=o_per.order2,
+            backlog=o_per.backlog, order_1=o_per.order_1, order_2=o_per.order_2,
             shipment_1=o_per.shipment_1, shipment_2=o_per.shipment_2, 
             cumulative_cost=o_per.current_cost+o_per.cumulative_cost)
         n_per.save()

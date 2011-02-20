@@ -61,7 +61,7 @@ class Game(models.Model):
     created = models.DateTimeField(auto_now_add=True)
     start_time = models.DateTimeField(null=True, blank=True)
     end_time = models.DateTimeField(blank=True, null=True)
-    num_periods = models.IntegerField(default=30, help_text='The number of periods the game will be played.')
+    num_periods = models.IntegerField(default=30, verbose_name='Number of periods')
     archive = models.BooleanField(default=False) 
 
     def save(self, *args, **kwargs):

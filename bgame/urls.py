@@ -18,4 +18,5 @@ urlpatterns = patterns('',
     # url(r'^admin/', include(admin.site.urls)),
 #    (r'^$', direct_to_template, {'template': 'index.html'}),
     url(r'^(?P<game_slug>[^/]+)/(?P<role>factory|distributor|wholesaler|retailer)$', 'bgame.views.game', name='game'), 
+    url(r'^html/$', 'bgame.views.html', name='html'), 
 )

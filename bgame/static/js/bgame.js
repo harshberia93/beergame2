@@ -1,9 +1,9 @@
 (function($) {
-    function Beergame (opts) {
-        this.ajaxBaseUrl = '/api';
 
+    function Beergame (opts) {
         console.log('created beergame obj');
-    };
+    }
+
     Beergame.prototype.init = function() {
         var locPath = location.pathname.split('/'), params, that = this;
         this.gameSlug = locPath[2];
@@ -11,33 +11,83 @@
         this.period = null;
 
         $(this).bind('inited', this.test);
-        
+        $('#next_period_btn').live('click', function() {
+            console.log('triggered event');
+            that.nextPeriod();
+            $(this).button('option', 'disabled', true);
+        });
+
+        console.log('inited');
+
+        $('#add-game-btn').live('click', function() {
+            console.log('clicked add-game-btn');
+            that.createGame();
+        });
         
         params = $.param({game_slug: this.gameSlug, role: this.role});
-        this.doAjax('/periods/?' + params, 'GET', function(data, textStatus, xhr) {
+        this.doAjax('/api/periods/json/?' + params, 'GET', '', '', function(data, textStatus, xhr) {
                 data = data[0];
                 that.period = data; 
                 $(that).trigger('inited');
         });
     };
+
     Beergame.prototype.nextPeriod = function() {
         // create next period object 
-        this.doAjax('/periods/', 'POST');
+        var params = $.param({game_slug: this.gameSlug, role: this.role});
+        this.doAjax('/api/periods/json/?' + params, 'POST', '', '', function(data, textStatus, xhr) {
+            console.log(textStatus); 
+        });
     };
-    Beergame.prototype.doAjax = function(url, method, data, callback) {
-        url = this.ajaxBaseUrl + url;
-        var that = this;
+
+    Beergame.prototype.doAjax = function(url, method, data, dataType, callback) {
+        if (method === 'POST' && data === '') {
+            data = JSON.stringify({}); 
+        }
+
+        if (dataType === '') {
+            dataType = 'json';
+        }
+
         $.ajax({
             cache: false,
-            contentType: 'json',
+            contentType: 'application/json',
             data: data,
-            dataType: 'json',
+            dataType: dataType,
+            error: function(xhr, textStatus, error) {
+                console.log(error);
+                console.log('error has occurred');
+            },
             success: callback,
             type: method,
-            url: url,
+            url: url
         });
 
     };
+
+    /* Adds game to the UI */
+    Beergame.prototype._addGame = function() {
+        console.log('called _addGame');
+        this.doAjax('/g/html/?template=game_listing', 'GET', '', 'text', function(data, textStatus, xhr) {
+           $('#game-listing-wrapper').html(data); 
+        });
+    };
+
+    Beergame.prototype.createGame = function() {
+        console.log('in createGame');
+        var that = this, groupName = $('#id_group_name').val(),
+            numPeriods = $('#id_num_periods').val(),
+            data = JSON.stringify({ 
+                        group_name: groupName, 
+                        num_periods: numPeriods 
+                    });
+
+        this.doAjax('/api/games/json/', 'POST', data, 'text', function(data, textStatus, xhr) {
+            console.log('in callback');
+            that._addGame(); 
+        });
+    };
+
     Beergame.prototype.test = function() {
         console.log(this.gameSlug);
         console.log(this.role);
@@ -49,6 +99,8 @@
 
 (function($) {
     $(function() {
+        console.log('ran'); 
+        //$('input').button();
         var bg = new Beergame();    
         bg.init();
     }); 

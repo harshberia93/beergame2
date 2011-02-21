@@ -47,6 +47,10 @@
             <h4>Shipment #1</h4>
             <p id="ship1_amt">{{ period.shipment_1 }}</p>
         </div>
+        <div class="lead-tile" id="shipment2">
+            <h4>Shipment #2</h4>
+            <p id="ship2_amt">{{ period.shipment_1 }}</p>
+        </div>
         <div class="instructions">
         Click Step 1 to advance Shipment 1 to On-hand Inventory and to advance
         Shipment 2 to Shipment 1.
@@ -71,6 +75,14 @@
         <div class="lead-tile" id="order1">
             <h4>Incoming Order #1</h4>
             <p id="order1_amt">
+                {% if display_orders %}
+                    {{ period.order_1 }}
+                {% endif %}
+            </p>
+        </div>
+        <div class="lead-tile" id="order2">
+            <h4>Incoming Order #2</h4>
+            <p id="order2_amt">
                 {% if display_orders %}
                     {{ period.order_1 }}
                 {% endif %}
@@ -118,13 +130,8 @@
             Enter an order size and click ORDER to place order on Supplier.
             </div>
         </div>
-
-        <div id="back_to_top">
-            <input type="button" id="top_btn" value="Back to Top" />
-        </div>
         <br class="clear" />
     </div>
 </div>
-  
 
 {% endblock %}

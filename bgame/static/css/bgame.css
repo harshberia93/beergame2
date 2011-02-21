@@ -46,6 +46,7 @@ div#wrapper {
 
 ul#add-game-form {
     padding: 0;
+    text-align: center;
 }
 
 ul#add-game-form li {
@@ -101,6 +102,12 @@ div.lead-tile {
     background: #eeeeee;
     border: 1px solid;
     float: left;
+    height: 80px;
+    width: 130px;
+}
+
+div.lead-tile h4 {
+    text-align: center;
 }
 
 div.instructions {

@@ -35,6 +35,7 @@
      * eCallback: error callback
      */
     Beergame.prototype.doAjax = function(url, method, data, dataType, sCallback, eCallback) {
+        var loading = $('#loading');
         if (method === 'POST' && data === '') {
             data = JSON.stringify({}); 
         }
@@ -43,8 +44,13 @@
             dataType = 'json';
         }
 
+        loading.removeClass('hidden');
+
         $.ajax({
             cache: false,
+            complete: function(xhr, settings) {
+                loading.addClass('hidden'); 
+            },
             contentType: 'application/json',
             data: data,
             dataType: dataType,
@@ -73,14 +79,12 @@
 
     /* Adds game to the UI */
     Beergame.prototype._addGame = function() {
-        console.log('called _addGame');
         this.doAjax('/g/html/?template=game_listing', 'GET', '', 'text', function(data, textStatus, xhr) {
            $('#game-listing-wrapper').html(data); 
         });
     };
 
     Beergame.prototype.createGame = function() {
-        console.log('in createGame');
         var that = this, groupName = $('#id_group_name').val(),
             numPeriods = $('#id_num_periods').val(),
             data = JSON.stringify({ 
@@ -89,7 +93,6 @@
                     });
 
         this.doAjax('/api/games/json/', 'POST', data, 'text', function(data, textStatus, xhr) {
-            console.log('in callback');
             that._addGame(); 
         });
     };

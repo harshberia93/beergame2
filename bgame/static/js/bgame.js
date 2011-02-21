@@ -1,7 +1,6 @@
 (function($) {
 
     function Beergame (opts) {
-        console.log('created beergame obj');
     }
 
     Beergame.prototype.init = function() {
@@ -10,17 +9,13 @@
         this.role = locPath[3];
         this.period = null;
 
-        $(this).bind('inited', this.test);
         $('#next_period_btn').live('click', function() {
             console.log('triggered event');
             that.nextPeriod();
             $(this).button('option', 'disabled', true);
         });
 
-        console.log('inited');
-
         $('#add-game-btn').live('click', function() {
-            console.log('clicked add-game-btn');
             that.createGame();
         });
         
@@ -28,19 +23,18 @@
         this.doAjax('/api/periods/json/?' + params, 'GET', '', '', function(data, textStatus, xhr) {
                 data = data[0];
                 that.period = data; 
-                $(that).trigger('inited');
         });
     };
 
-    Beergame.prototype.nextPeriod = function() {
-        // create next period object 
-        var params = $.param({game_slug: this.gameSlug, role: this.role});
-        this.doAjax('/api/periods/json/?' + params, 'POST', '', '', function(data, textStatus, xhr) {
-            console.log(textStatus); 
-        });
-    };
-
-    Beergame.prototype.doAjax = function(url, method, data, dataType, callback) {
+    /*
+     * url
+     * method: HTTP -- GET, POST, PUT, or DELETE
+     * data: data to send to the server
+     * dataType: excepted datatype from the server
+     * sCallback: success callback
+     * eCallback: error callback
+     */
+    Beergame.prototype.doAjax = function(url, method, data, dataType, sCallback, eCallback) {
         if (method === 'POST' && data === '') {
             data = JSON.stringify({}); 
         }
@@ -59,7 +53,7 @@
                 if (textStatus === 'timeout') {
                     $.jGrowl('ERROR: Could not connect to server.  Please check your internet connection and try again.');
                 } else if (error === 'BAD REQUEST') {
-                    $.jGrowl('ERROR: ' + xhr.responseText, {position: 'center'}); 
+                    $.jGrowl('ERROR: ' + xhr.responseText, {position: 'bottom-right'}); 
                 }
                 
                 console.log('####error has occurred####');
@@ -69,7 +63,7 @@
                 console.log('xhr.statusText:' + xhr.statusText);
                 console.log('xhr.getAllResponseHeaders:' + xhr.getAllResponseHeaders);
             },
-            success: callback,
+            success: sCallback,
             timeout: 3000,
             type: method,
             url: url
@@ -100,10 +94,12 @@
         });
     };
 
-    Beergame.prototype.test = function() {
-        console.log(this.gameSlug);
-        console.log(this.role);
-        console.log(this.period);
+    Beergame.prototype.nextPeriod = function() {
+        // create next period object 
+        var params = $.param({game_slug: this.gameSlug, role: this.role});
+        this.doAjax('/api/periods/json/?' + params, 'POST', '', '', function(data, textStatus, xhr) {
+            console.log(textStatus); 
+        });
     };
 
     window.Beergame = Beergame;
@@ -111,8 +107,6 @@
 
 (function($) {
     $(function() {
-        console.log('ran'); 
-        //$('input').button();
         var bg = new Beergame();    
         bg.init();
     }); 

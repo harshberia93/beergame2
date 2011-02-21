@@ -1,12 +1,130 @@
 {% extends "base.html" %}
 
-{% block content %}
+{% block header %}
 
-{{ player.role|title }}
-{{ period.number }}
+<div id="logo">
+    <img src="{{ STATIC_URL }}img/beergame-logo.gif" />
+</div>
+<div id="status">
+    <p id="role-label">Your role:</p>
+    <p id="role">{{ player.role|title }}</p>
+    <p id="period-label">Period:</p>
+    <p id="period">
+        {% if period.number == 0 %}
+            Just Started
+        {% else %}
+            {{ period.number }}
+        {% endif %}
+    </p>
+</div>
+<div id="cost">
+    <p id="total-cost-label">
+        Cumulative Cost: 
+    </p>
+    <p id="total-cost">
+        ${{ period.cumulative_cost|floatformat:2 }}
+    </p>
+</div>
+<br class="clear" />
+{% endblock %}
+
+{% block content %}
 
 <div id="next_period">
     <input type="button" id="next_period_btn" class="button" value="{% ifequal period.number 0 %}Start game{% endifequal %}{% ifnotequal period.number 0 %}Start next period{% endifnotequal %}" />
 </div>
+
+<div class="step-wrapper">
+    <div id="step1" class="step">
+        <div class="step-button">
+            <input type="button" id="step1_btn" class="button" value="Step 1" />
+        </div>
+        <div class="lead-tile" id="inventory">
+            <h4>On-Hand Inventory</h4>
+            <p id="inv_amt">{{ period.inventory }}</p>
+        </div>
+        <div class="lead-tile" id="shipment1">
+            <h4>Shipment #1</h4>
+            <p id="ship1_amt">{{ period.shipment_1 }}</p>
+        </div>
+        <div class="instructions">
+        Click Step 1 to advance Shipment 1 to On-hand Inventory and to advance
+        Shipment 2 to Shipment 1.
+        </div>
+    </div>
+    <p class="clear"> </p>
+</div>
+
+<div class="step-wrapper">
+    <div id="step2" class="step">
+        <div class="instructions">
+            Click Step 2 to advance Incoming Order 1 to Current Order and to advance
+            Incoming Order 2 to Incoming Order 1.
+        </div>
+        <div class="step-button">
+            <input type="button" id="step2_btn" class="button" value="Step 2" />
+        </div>
+        <div class="lead-tile" id="order">
+            <h4>Current Order</h4>
+            <p id="order_amt">{% ifnotequal period.demand None %}{{ period.demand }}{% endifnotequal %}</p>
+        </div>
+        <div class="lead-tile" id="order1">
+            <h4>Incoming Order #1</h4>
+            <p id="order1_amt">
+                {% if display_orders %}
+                    {{ period.order_1 }}
+                {% endif %}
+            </p>
+        </div>
+     <br class="clear" />
+    </div>
+</div>
+
+<div class="step-wrapper">
+        <div id="shipping">
+            <label for="amt_to_ship">Quantity to deliver</label>
+            <input type="text" id="amt_to_ship" />
+            <input type="button" id="ship_btn" class="button" value="Ship" />
+            <div id="shipment_errors" class="error"></div>
+            <div class="instructions">
+            Recommended Shipment size is minimum of (Backlog+Current Order) and On-hand
+            Inventory. Click SHIP to send shipment to customer.
+            </div>
+     <br class="clear" />
+        </div>
+</div>
+<div class="step-wrapper">
+    <div id="step3" class="step">
+        <div class="instructions">
+            Click Step 3 to record end-of-period data in the table.
+        </div>
+        <div class="step-button"> 
+            <input type="button" id="step3_btn" class="button" value="Step 3" />
+        </div>
+        <br />
+        <div id="period_table">
+        </div>
+        <br class="clear" />
+    </div>
+</div>
+
+<div class="step-wrapper">
+        <div id="ordering">
+            <label for="amt_to_order">Enter your order:</label>
+            <input type="text" id="amt_to_order" />
+            <input type="button" id="order_btn" class="button" value="Order" />
+            <div id="order_errors" class="error"></div>
+            <div class="instructions">
+            Enter an order size and click ORDER to place order on Supplier.
+            </div>
+        </div>
+
+        <div id="back_to_top">
+            <input type="button" id="top_btn" value="Back to Top" />
+        </div>
+        <br class="clear" />
+    </div>
+</div>
+  
 
 {% endblock %}

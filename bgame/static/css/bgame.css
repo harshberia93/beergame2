@@ -15,6 +15,28 @@ div#top-nav {
     text-align: right;
 }
 
+div#logo {
+    float: left;
+}
+
+div#status, div#cost {
+    float: left; 
+    margin: 0 0 0 100px;
+    padding: 10px 20px 20px 20px;
+    text-align: left;
+}
+
+p#role-label, p#period-label, p#total-cost-label {
+    font-size: 9pt;
+    margin: 12px 0 0 0;
+}
+
+p#role, p#period, p#total-cost {
+    font-size: 1.3em;
+    font-weight: bold;
+    margin: 4px 0 0 0;
+}
+
 div#wrapper {
     left: 50%;
     margin-left: -30%;
@@ -50,6 +72,10 @@ table#game-listing th {
     display: none;
 }
 
+.clear {
+    clear: both;
+}
+
 table#game-listing td {
     padding: 6px 4px 6px 4px;
     text-align: center;
@@ -63,3 +89,22 @@ table#game-listing td.group-name {
     font-weight: bold;
 }
 
+div.step-wrapper {
+    border: 1px solid;
+}
+
+div.step-button {
+    float: left; 
+}
+
+div.lead-tile {
+    background: #eeeeee;
+    border: 1px solid;
+    float: left;
+}
+
+div.instructions {
+    float: right;
+    font-size: 10pt;
+    width: 300px;
+}

@@ -30,22 +30,32 @@ var DEBUG = true;
         var locPath = location.pathname.split('/'), params, that = this;
         this.gameSlug = locPath[2];
         this.role = locPath[3];
-        this.period = null;
+        this.currentPeriod = 0;
+        this.periodObj = null;
 
-        this.BUTTONS = ['next-period-btn', 'step1-btn', 'step2-btn', 'ship-btn', 'order-btn'];
+        this.BUTTONS = ['start-btn', 'step1-btn', 'step2-btn', 'ship-btn', 'order-btn'];
         this.currentBtn = 0; // index of BUTTONS
 
         this.initUI();
 
         $('.button').live('click', $.proxy(this.initButtonHandlers, this));
 
-        $('#add-game-btn').live('click', this.createGame);
+        $('#add-game-btn').live('click', $.proxy(this.createGame, this));
 
-        params = $.param({game_slug: this.gameSlug, role: this.role});
-        this.doAjax('/api/periods/json/?' + params, 'GET', '', '', function(data, textStatus, xhr) {
-                data = data[0];
-                that.period = data;
-        });
+    };
+
+    Beergame.prototype._buildUrl = function(gameSlug, role, currentPeriod) {
+        var url = '/api/games/';
+        if (gameSlug !== undefined) {
+            url += gameSlug + '/';
+        }
+        if (role !== undefined) {
+            url += 'players/' + role + '/';
+        }
+        if (currentPeriod !== undefined) {
+            url += 'periods/' + currentPeriod + '/';
+        }
+        return url;
     };
 
     Beergame.prototype._getCurBtnId = function() {
@@ -55,21 +65,40 @@ var DEBUG = true;
     Beergame.prototype.initButtonHandlers = function(evt) {
         console.log('button clicked...');
         var elm = evt.target;
+
         $(elm).attr('disabled', true);
+        this.currentBtn = $.inArray(elm.id, this.BUTTONS);
+
         switch (elm.id) {
-            case 'next-period-btn':
+            case 'start-btn':
                 console.log('clicked next period');
-                this.currentBtn = $.inArray(elm.id, this.BUTTONS);
                 this.nextPeriod();
             break;
             case 'step1-btn':
+                console.log('clicked step1');
+                this.step1();
+            break;
+            case 'step2-btn':
+                console.log('clicked step2');
+                this.step2();
             break;
         }
     };
 
     Beergame.prototype.initUI = function() {
         $('.button').attr('disabled', true);
-        $('#next-period-btn').attr('disabled', false);
+        var that = this;
+        this.doAjax(this._buildUrl(this.gameSlug, this.role), 'GET', '', '', function(data, textStatus, xhr) {
+            that.playerObj = data;
+
+            if (data.state === 'not_started') {
+                that.currentBtn = 0;
+            } else {
+                that.currentBtn = $.inArray(data.current_state + '-btn', that.BUTTONS) + 1;
+            }
+
+            $('#' + that._getCurBtnId()).attr('disabled', false);
+        }, function() {});
     };
 
     Beergame.prototype.defaultAjaxError = function(xhr, textStatus, error) {
@@ -99,7 +128,7 @@ var DEBUG = true;
      */
     Beergame.prototype.doAjax = function(url, method, data, dataType, sCallback, eCallback) {
         var loading = $('#loading');
-        if (method === 'POST' && data === '') {
+        if ((method === 'POST' || method === 'PUT') && data === '') {
             data = JSON.stringify({});
         }
 
@@ -131,11 +160,17 @@ var DEBUG = true;
         $('#'+this._getCurBtnId()).attr('disabled', false);
     };
 
-    Beergame.prototype.doBtnAjax = function(url, method, data, dataType, sCallback) {
+    Beergame.prototype.doBtnAjax = function(url, method, data, dataType, callback) {
         console.log('in doBtnAjax');
 
         function sCallback(data, textStatus, xhr) {
+            console.log('in btnAjax success callback');
+            this.currentBtn += 1;
+            curBtnId = this._getCurBtnId();
+            console.log('curBtnId: ' + curBtnId);
             $('#'+this._getCurBtnId()).attr('disabled', false);
+
+            callback();
         }
         this.doAjax(url, method, data, dataType, $.proxy(sCallback, this), $.proxy(this.defaultBtnAjaxError, this));
     };
@@ -155,30 +190,64 @@ var DEBUG = true;
                         num_periods: numPeriods
                     });
 
-        this.doAjax('/api/games/json/', 'POST', data, 'text', function(data, textStatus, xhr) {
+        this.doAjax('/api/games/', 'POST', data, 'text', function(data, textStatus, xhr) {
             that._addGame();
         });
     };
 
     Beergame.prototype.nextPeriod = function() {
         // create next period object
-        var that = this, params = $.param({game_slug: this.gameSlug, role: this.role});
-        this.doBtnAjax('/api/periods/json/?' + params, 'POST', '', 'text', function(data, textStatus, xhr) {
+        var that = this;
+        this.doBtnAjax(this._buildUrl(this.gameSlug, this.role) + 'periods/', 'POST', '', 'text', function(data, textStatus, xhr) {
             console.log(textStatus);
             that.incrPeriod();
         });
     };
 
+    Beergame.prototype.advanceShipments = function() {
+        this.doAjax(this._buildUrl(this.gameSlug, this.role, this.currentPeriod), 'GET', '', 'json', function(data, textStatus, xhr) {
+            this.periodObj = data;
+
+            $('#inv-amt').text(data.inventory);
+            $('#ship1-amt').text(data.shipment_1);
+
+            if (data.shipment_2 === null) {
+                $('#ship2-amt').text('waiting...');
+            }
+        });
+    };
+
+    Beergame.prototype.step1 = function() {
+        // advance shipments towards inventory
+        var that = this;
+        this.doBtnAjax(this._buildUrl(this.gameSlug, this.role, this.currentPeriod) + '?step=1',
+                        'PUT', '', 'text', function(data, textStatus, xhr) {
+            that.advanceShipments();
+        });
+    };
+
+    Beergame.prototype.advanceOrders = function() {
+        this.doAjax(this._buildUrl(this.gameSlug, this.role, this.currentPeriod), 'GET', '', 'json', function(data, textStatus, xhr) {
+            this.periodObj = data;
+
+            $('#order-amt').text(data.demand);
+        });
+    };
+
+    Beergame.prototype.step2 = function() {
+        // advance orders towards current order
+        var that = this;
+        this.doBtnAjax(this._buildUrl(this.gameSlug, this.role, this.currentPeriod) + '?step=2',
+                        'PUT', '', 'text', function(data, textStatus, xhr) {
+            that.advanceOrders();
+        });
+    };
+
     Beergame.prototype.incrPeriod = function() {
         var per = $('#period');
+        this.currentPeriod += 1;
 
-        curPer = parseInt(per.text());
-
-        if (isNaN(curPer)) {
-            per.text(1);
-        } else {
-            per.text(curPer+1);
-        }
+        per.text(this.currentPeriod);
     };
 
     window.Beergame = Beergame;

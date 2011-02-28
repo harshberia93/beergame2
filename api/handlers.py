@@ -114,31 +114,27 @@ class PeriodHandler(AnonymousBaseHandler):
 
         return base
 
-    def create(self, request):
+    def create(self, request, game_slug, role):
         """
         Creates a Period object from POST.  This is the action
         associated with Start Game or Start Next Period button.
         """
-        data = request.GET
-
-        required_params = ('game_slug', 'role',)
-
-        for param in required_params:
-            if not param in data:
-                log.debug('missing parameter "%s"' % (param))
-                log.debug(data)
-                resp = rc.BAD_REQUEST
-                resp.content = 'Missing query parameter "%s"' % (param)
-                return resp
-
-        game_slug = data['game_slug']
-        role = data['role']
-
         # check if other teams are in the currect states:
         #  + not_started: means teams haven't started
         players = Player.objects.filter(game__game_slug=game_slug)
 
-        player = players.get(role=role)
+        if players.count() == 0:
+            resp = rc.NOT_FOUND
+            resp.content = 'Could not find Players for "%s"' % (game_slug,)
+            return resp
+
+        try:
+            player = players.get(role=role)
+        except Player.DoesNotExist:
+            resp = rc.NOT_FOUND
+            resp.content = 'Could not find Players in "%s" for "%s"' % (game_slug, role)
+            return resp
+
         cur_period = player.current_period + 1
 
         other_players = players.exclude(role=role)
@@ -153,6 +149,7 @@ class PeriodHandler(AnonymousBaseHandler):
         # increment the period
         player = players.get(role=role)
         player.current_period = cur_period
+        player.current_state = 'start'
         player.save()
 
         o_per = Period.objects.filter(player__game__game_slug=game_slug)
@@ -168,7 +165,19 @@ class PeriodHandler(AnonymousBaseHandler):
 
         return rc.CREATED
 
-    def update(self, request, game_slug, role):
+    def _set_player_state(self, game_slug, role, state):
+        try:
+            player = Player.objects.filter(game__game_slug=game_slug).get(role=role)
+        except Player.DoesNotExist:
+            return False
+
+        player.current_state = state
+        player.save()
+
+        return Player
+
+    def update(self, request, game_slug, role, number):
+        print 'in update period'
         step = request.GET['step']
         if not step:
             resp = rc.BAD_REQUEST
@@ -177,28 +186,55 @@ class PeriodHandler(AnonymousBaseHandler):
 
         def _get_current_period():
             period = Period.objects.filter(player__game__game_slug=game_slug)
-            try:
-                period.get(player__role=role)
-            except Period.DoesNotExist:
-                resp = rc.NOT_FOUND
-                resp.content = 'Could not find period for "%s" in "%s"' % (role, game_slug)
-                return resp
+            period = period.filter(player__role=role).order_by('-number')[0]
+            return period
 
         def step1():
             """
             move shipment 2 to shipment 1, shipment 1 to inventory
             """
-
             period = _get_current_period()
 
-            if not isinstance(period, Period):
-                return period
+            player = self._set_player_state(game_slug, role, 'step1')
+            if not player:
+                return rc.NOT_FOUND
+
+            period.inventory += period.shipment_1
+            period.shipment_1 = period.shipment_2
+
+            if period.shipment_stash:
+                period.shipment_2 = period.shipment_stash
+                period.shipment_stash = None
+            else:
+                period.shipment_2 = None
+
+            period.save()
+
+            return rc.ALL_OK
 
         def step2():
             """
             move order 2 to order 1, order 1 to current order
             """
-            pass
+            period = _get_current_period()
+
+            player = self._set_player_state(game_slug, role, 'step2')
+            if not player:
+                return rc.NOT_FOUND
+
+            period.demand = period.order_1
+            period.order_1 = period.order_2
+
+            if period.order_stash:
+                period.order_2 = period.order_stash
+                period.order_stash = None
+            else:
+                period.order_2 = None
+
+            period.save()
+
+            return rc.ALL_OK
+
 
         def ship():
             """

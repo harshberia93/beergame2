@@ -13,13 +13,13 @@ periods = Resource(handler=PeriodHandler)
 
 urlpatterns = patterns('',
     (r'^games/$', games),
-    (r'^games/(?P<emitter_format>.+)/$', games),
+    (r'^games/(?P<group_name>[^/]+)/$', games),
 
-    (r'^players/$', players),
-    (r'^players/(?P<emitter_format>.+)/$', players),
+    (r'^games/(?P<game_slug>[^/]+)/players/$', players),
+    (r'^games/(?P<game_slug>[^/]+)/players/(?P<role>[^/]+)/$', players),
 
-    (r'^periods/$', periods),
-    (r'^periods/(?P<emitter_format>.+)/$', periods),
+    (r'^games/(?P<game_slug>[^/]+)/players/(?P<role>[^/]+)/periods/$', periods),
+    (r'^games/(?P<game_slug>[^/]+)/players/(?P<role>[^/]+)/periods/(?P<number>\d+)/$', periods),
 
     url(r'^$', documentation_view),
 )

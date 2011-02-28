@@ -19,7 +19,7 @@
 </div>
 <div id="cost">
     <p id="total-cost-label">
-        Cumulative Cost: 
+        Cumulative Cost:
     </p>
     <p id="total-cost">
         ${{ period.cumulative_cost|floatformat:2 }}
@@ -30,25 +30,29 @@
 
 {% block content %}
 
-<div id="next_period">
-    <input type="button" id="next_period_btn" class="button" value="{% ifequal period.number 0 %}Start game{% endifequal %}{% ifnotequal period.number 0 %}Start next period{% endifnotequal %}" />
+<div class="step-wrapper">
+    <div id="next_period" class="step-button">
+        <input type="button" id="next-period-btn" class="button" value="{% ifequal period.number 0 %}Start game{% endifequal %}{% ifnotequal period.number 0 %}Start next period{% endifnotequal %}" />
+    </div>
+    <br class="clear">
 </div>
+
 
 <div class="step-wrapper">
     <div id="step1" class="step">
         <div class="step-button">
-            <input type="button" id="step1_btn" class="button" value="Step 1" />
+            <input type="button" id="step1-btn" class="button" value="Step 1" />
         </div>
         <div class="lead-tile" id="inventory">
             <h4>On-Hand Inventory</h4>
             <p id="inv_amt">{{ period.inventory }}</p>
         </div>
         <div class="lead-tile" id="shipment1">
-            <h4>Shipment #1</h4>
+            <h4>Shipment 1</h4>
             <p id="ship1_amt">{{ period.shipment_1 }}</p>
         </div>
         <div class="lead-tile" id="shipment2">
-            <h4>Shipment #2</h4>
+            <h4>Shipment 2</h4>
             <p id="ship2_amt">{{ period.shipment_1 }}</p>
         </div>
         <div class="instructions">
@@ -66,14 +70,14 @@
             Incoming Order 2 to Incoming Order 1.
         </div>
         <div class="step-button">
-            <input type="button" id="step2_btn" class="button" value="Step 2" />
+            <input type="button" id="step2-btn" class="button" value="Step 2" />
         </div>
         <div class="lead-tile" id="order">
             <h4>Current Order</h4>
             <p id="order_amt">{% ifnotequal period.demand None %}{{ period.demand }}{% endifnotequal %}</p>
         </div>
         <div class="lead-tile" id="order1">
-            <h4>Incoming Order #1</h4>
+            <h4>Incoming Order 1</h4>
             <p id="order1_amt">
                 {% if display_orders %}
                     {{ period.order_1 }}
@@ -81,7 +85,7 @@
             </p>
         </div>
         <div class="lead-tile" id="order2">
-            <h4>Incoming Order #2</h4>
+            <h4>Incoming Order 2</h4>
             <p id="order2_amt">
                 {% if display_orders %}
                     {{ period.order_1 }}
@@ -96,22 +100,22 @@
         <div id="shipping">
             <label for="amt_to_ship">Quantity to deliver</label>
             <input type="text" id="amt_to_ship" />
-            <input type="button" id="ship_btn" class="button" value="Ship" />
+            <input type="button" id="ship-btn" class="button" value="Ship" />
             <div id="shipment_errors" class="error"></div>
-            <div class="instructions">
-            Recommended Shipment size is minimum of (Backlog+Current Order) and On-hand
-            Inventory. Click SHIP to send shipment to customer.
-            </div>
-     <br class="clear" />
         </div>
+        <div class="instructions">
+        Recommended Shipment size is minimum of (Backlog+Current Order) and On-hand
+        Inventory. Click SHIP to send shipment to customer.
+        </div>
+     <br class="clear" />
 </div>
 <div class="step-wrapper">
     <div id="step3" class="step">
         <div class="instructions">
             Click Step 3 to record end-of-period data in the table.
         </div>
-        <div class="step-button"> 
-            <input type="button" id="step3_btn" class="button" value="Step 3" />
+        <div class="step-button">
+            <input type="button" id="step3-btn" class="button" value="Step 3" />
         </div>
         <br />
         <div id="period_table">
@@ -124,11 +128,11 @@
         <div id="ordering">
             <label for="amt_to_order">Enter your order:</label>
             <input type="text" id="amt_to_order" />
-            <input type="button" id="order_btn" class="button" value="Order" />
+            <input type="button" id="order-btn" class="button" value="Order" />
             <div id="order_errors" class="error"></div>
-            <div class="instructions">
+        </div>
+        <div class="instructions">
             Enter an order size and click ORDER to place order on Supplier.
-            </div>
         </div>
         <br class="clear" />
     </div>

@@ -39,9 +39,9 @@ p#role, p#period, p#total-cost {
 
 div#wrapper {
     left: 50%;
-    margin-left: -30%;
+    margin-left: -500px;
     position: absolute; 
-    width: 60%;  
+    width: 1000px;  
 }
 
 ul#add-game-form {
@@ -91,27 +91,42 @@ table#game-listing td.group-name {
 }
 
 div.step-wrapper {
-    border: 1px solid;
+    background: #efefef;
+    border-radius: 15px;
+    -moz-border-radius: 15px;
+    margin: 0 0 10px 0;
+    padding: 10px 0 10px 0;
 }
 
 div.step-button {
     float: left; 
+    height: 100%;
+    margin: 0 0 0 20px;
+    width: 160px;
+}
+
+div.lead-tile, div#shipping, div#ordering {
+    float: left;
 }
 
 div.lead-tile {
-    background: #eeeeee;
-    border: 1px solid;
-    float: left;
+    background: #fcb528;
+    border-radius: 15px;
+    -moz-border-radius: 15px;
     height: 80px;
+    margin: 0 10px 0 0;
+    padding: 10px 0 0 0;
     width: 130px;
 }
 
-div.lead-tile h4 {
+div.lead-tile h4, div.lead-tile p {
+    margin: 0;
     text-align: center;
 }
 
 div.instructions {
     float: right;
     font-size: 10pt;
+    margin: 0 0 0 30px;
     width: 300px;
 }

@@ -35,7 +35,7 @@ class Player(models.Model):
 
     def save(self, *args, **kwargs):
         """
-        Initializes the first Period for the Player 
+        Initializes the first Period for the Player
         """
         is_new = self.pk is None
 
@@ -52,8 +52,8 @@ class Player(models.Model):
 
 class Game(models.Model):
     """
-    The Game model represents the collection of Players who are all 
-    part of the same supply chain. Each Player will participate in 
+    The Game model represents the collection of Players who are all
+    part of the same supply chain. Each Player will participate in
     one of four roles: Factory, Distributor, Wholesaler, or Retailer.
     """
     group_name = models.CharField(max_length=40, unique=True)
@@ -62,7 +62,7 @@ class Game(models.Model):
     start_time = models.DateTimeField(null=True, blank=True)
     end_time = models.DateTimeField(blank=True, null=True)
     num_periods = models.IntegerField(default=30, verbose_name='Number of periods')
-    archive = models.BooleanField(default=False) 
+    archive = models.BooleanField(default=False)
 
     def save(self, *args, **kwargs):
         """
@@ -104,8 +104,8 @@ class Period(models.Model):
     order_2 = models.IntegerField(blank=True, null=True, default=4)
 
     # stashes order if Player has not advanced order_2 to order_1
-    order_stash = models.IntegerField(blank=True, null=True) 
-    
+    order_stash = models.IntegerField(blank=True, null=True)
+
     shipment_1 = models.IntegerField(blank=True, null=True, default=4)
     shipment_2 = models.IntegerField(blank=True, null=True, default=4)
 

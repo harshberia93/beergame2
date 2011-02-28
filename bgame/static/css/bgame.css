@@ -69,7 +69,7 @@ table#game-listing th {
     padding: 4px;
 }
 
-.hidden { 
+.hidden {
     display: none;
 }
 
@@ -98,10 +98,14 @@ div.step-wrapper {
     padding: 10px 0 10px 0;
 }
 
-div.step-button {
-    float: left; 
-    height: 100%;
+div.step {
     margin: 0 0 0 20px;
+}
+
+div.step-button {
+    float: left;
+    height: 100%;
+    margin: 0;
     width: 160px;
 }
 

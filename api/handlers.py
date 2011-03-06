@@ -7,13 +7,13 @@ from piston.utils import rc, require_mime, require_extended
 import logging
 
 from beergame.bgame.models import Game, Player, Period
+from beergame.api.exceptions import InvalidStateChange
 
 log = logging.getLogger(__name__)
 
 class GameHandler(AnonymousBaseHandler):
     model = Game
-    fields = ('group_name', 'created', 'start_time',
-                'end_time', 'num_periods', 'archive')
+    fields = ('group_name', 'created', 'start_time', 'end_time', 'num_periods', 'archive')
     allowed_methods = ('GET', 'POST',)
 
     def read(self, request, group_name=None):
@@ -166,15 +166,27 @@ class PeriodHandler(AnonymousBaseHandler):
         return rc.CREATED
 
     def _set_player_state(self, game_slug, role, state):
-        try:
-            player = Player.objects.filter(game__game_slug=game_slug).get(role=role)
-        except Player.DoesNotExist:
-            return False
+        """
+        Can throw two exceptions
+            * Player.DoesNotExist
+            * InvalidStateChange (custom exception)
+        """
+        player = Player.objects.filter(game__game_slug=game_slug).get(role=role)
+
+        current_state_index = [xx for xx, yy in enumerate(Player.STATES) if yy[0] == player.current_state][0]
+
+        next_state_index = current_state_index + 1
+
+        # if on order, the next state will be start (at index 1)
+        if next_state_index == len(Player.STATES):
+            next_state_index = 1
+
+        next_state = Player.STATES[next_state_index][0]
+        if next_state != state:
+            raise InvalidStateChange('"%s" is not the next state for "%s"' % (state, player.current_state))
 
         player.current_state = state
         player.save()
-
-        return Player
 
     def update(self, request, game_slug, role, number):
         print 'in update period'
@@ -193,12 +205,8 @@ class PeriodHandler(AnonymousBaseHandler):
             """
             move shipment 2 to shipment 1, shipment 1 to inventory
             """
+
             period = _get_current_period()
-
-            player = self._set_player_state(game_slug, role, 'step1')
-            if not player:
-                return rc.NOT_FOUND
-
             period.inventory += period.shipment_1
             period.shipment_1 = period.shipment_2
 
@@ -210,18 +218,25 @@ class PeriodHandler(AnonymousBaseHandler):
 
             period.save()
 
+            try:
+                player = self._set_player_state(game_slug, role, 'step1')
+            except Player.DoesNotExist as ex:
+                resp = rc.NOT_FOUND
+                resp.content = 'Could not find "%s" in "%s"' % (role, game_slug)
+                return resp
+            except InvalidStateChange as ex:
+                resp = rc.BAD_REQUEST
+                resp.content = ex.value
+                return resp
+
             return rc.ALL_OK
 
         def step2():
             """
             move order 2 to order 1, order 1 to current order
             """
+
             period = _get_current_period()
-
-            player = self._set_player_state(game_slug, role, 'step2')
-            if not player:
-                return rc.NOT_FOUND
-
             period.demand = period.order_1
             period.order_1 = period.order_2
 
@@ -233,21 +248,52 @@ class PeriodHandler(AnonymousBaseHandler):
 
             period.save()
 
-            return rc.ALL_OK
+            try:
+                player = self._set_player_state(game_slug, role, 'step2')
+            except Player.DoesNotExist as ex:
+                resp = rc.NOT_FOUND
+                resp.content = 'Could not find "%s" in "%s"' % (role, game_slug)
+                return resp
+            except InvalidStateChange as ex:
+                resp = rc.BAD_REQUEST
+                resp.content = ex.value
+                return resp
 
+            return rc.ALL_OK
 
         def ship():
             """
             move shipment amount to downstream role
             """
-            pass
+            try:
+                player = self._set_player_state(game_slug, role, 'ship')
+            except Player.DoesNotExist as ex:
+                resp = rc.NOT_FOUND
+                resp.content = 'Could not find "%s" in "%s"' % (role, game_slug)
+                return resp
+            except InvalidStateChange as ex:
+                resp = rc.BAD_REQUEST
+                resp.content = ex.value
+                return resp
+
+            return rc.ALL_OK
 
         def order():
             """
             move order amount to upstream role
             """
-            pass
+            try:
+                player = self._set_player_state(game_slug, role, 'ship')
+            except Player.DoesNotExist as ex:
+                resp = rc.NOT_FOUND
+                resp.content = 'Could not find "%s" in "%s"' % (role, game_slug)
+                return resp
+            except InvalidStateChange as ex:
+                resp = rc.BAD_REQUEST
+                resp.content = ex.value
+                return resp
 
+            return rc.ALL_OK
 
         step_handler = {
             '1': step1,

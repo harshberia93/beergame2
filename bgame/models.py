@@ -119,4 +119,4 @@ class Period(models.Model):
     cumulative_cost = models.DecimalField(max_digits=8, decimal_places=2, default='0.00')
 
     def __unicode__(self):
-        return '%d / %s / %s' % (self.number, self.team.role, self.team.game.name)
+        return '%d / %s / %s' % (self.number, self.player.role, self.player.game.group_name)

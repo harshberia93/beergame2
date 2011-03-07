@@ -134,3 +134,11 @@ div.instructions {
     margin: 0 0 0 30px;
     width: 300px;
 }
+
+div#period-table table {
+    font-size: 9pt;
+}
+div#period-table th, td {
+    border: 1px solid;
+    width: 20px;
+}

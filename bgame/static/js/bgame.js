@@ -86,6 +86,10 @@ var DEBUG = true;
                 console.log('clicked ship');
                 this.ship();
             break;
+            case 'step3-btn':
+                console.log('clicked step3');
+                this.step3();
+            break;
         }
     };
 
@@ -174,7 +178,7 @@ var DEBUG = true;
             console.log('curBtnId: ' + curBtnId);
             $('#'+this._getCurBtnId()).attr('disabled', false);
 
-            callback();
+            callback(data, textStatus, xhr);
         }
         this.doAjax(url, method, data, dataType, $.proxy(sCallback, this), $.proxy(this.defaultBtnAjaxError, this));
     };
@@ -258,6 +262,15 @@ var DEBUG = true;
         this.doBtnAjax(this._buildUrl(this.gameSlug, downStreamRole, this.currentPeriod) + '?step=ship',
                         'PUT', data, 'text', function(data, textStatus, xhr) {
             // TODO do we need to do anything after we ship?
+        });
+    };
+
+    Beergame.prototype.step3 = function() {
+        var that = this;
+
+        this.doBtnAjax('/g/html/' + '?template=period_listing&game_slug=' + this.gameSlug + '&role=' + this.role,
+                        'GET', '', 'text', function(data, textStatus, xhr) {
+            $('#period-table').html(data);
         });
     };
 

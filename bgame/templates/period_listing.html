@@ -1,0 +1,29 @@
+<table>
+    <tr>
+        <th>End-of-Period</th>
+        <th>Order</th>
+        <th>Shipped</th>
+        <th>On-Hand Inventory</th>
+        <th>Backlog</th>
+        <th>Shipment 1</th>
+        <th>Shipment 2</th>
+        <th>Period Cost</th>
+        <th>Cumulative Cost</th>
+        <th>Your Order</th>
+    </tr>
+{% for period in periods %}
+    <tr>
+        <td>{{ period.number }}</td>
+        <td>{{ period.demand }}</td>
+        <td>{{ period.shipped }}</td>
+        <td>{{ period.inventory }}</td>
+        <td>{{ period.backlog }}</td>
+        <td>{{ period.shipment_1 }}</td>
+        <td>{{ period.shipment_2 }}</td>
+        <td>{{ period.cost }}</td>
+        <td>{{ period.cumulative_cost }}</td>
+        <td>{{ period.order }}</td>
+    </tr>
+{% endfor %}
+</table>
+

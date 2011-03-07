@@ -6,8 +6,8 @@ from piston.utils import rc, require_mime, require_extended
 
 import logging
 
-from beergame.bgame.models import Game, Player, Period
-from beergame.api.exceptions import InvalidStateChange
+from beergame.bgame.models import Game, Player, Period, ROLES
+from beergame.api.exceptions import InvalidStateChange, InvalidRole
 
 log = logging.getLogger(__name__)
 
@@ -183,13 +183,13 @@ class PeriodHandler(AnonymousBaseHandler):
 
         next_state = Player.STATES[next_state_index][0]
         if next_state != state:
-            raise InvalidStateChange('"%s" is not the next state for "%s"' % (state, player.current_state))
+            raise InvalidStateChange('"%s" is not the next state for "%s" for player "%s" in "%s"' %\
+                (state, player.current_state, player.role, player.game.game_slug))
 
         player.current_state = state
         player.save()
 
     def update(self, request, game_slug, role, number):
-        print 'in update period'
         step = request.GET['step']
         if not step:
             resp = rc.BAD_REQUEST
@@ -200,6 +200,25 @@ class PeriodHandler(AnonymousBaseHandler):
             period = Period.objects.filter(player__game__game_slug=game_slug)
             period = period.filter(player__role=role).order_by('-number')[0]
             return period
+
+        def _get_upstream_player():
+            """
+            Can raise the following exception:
+                * InvalidRole
+            """
+            try:
+                role_index = [xx for xx, yy in enumerate(ROLES) if yy[0] == role][0]
+            except KeyError as ex:
+                raise InvalidRole('The role "%s" does not exist', (role,))
+
+            if role_index != 0:
+                upstream_role = ROLES[role_index - 1][0]
+            else:
+                raise InvalidRole('Should never ship to factory!')
+
+
+            return Player.objects.filter(game__game_slug=game_slug).get(role=upstream_role)
+
 
         def step1():
             """
@@ -219,7 +238,7 @@ class PeriodHandler(AnonymousBaseHandler):
             period.save()
 
             try:
-                player = self._set_player_state(game_slug, role, 'step1')
+                self._set_player_state(game_slug, role, 'step1')
             except Player.DoesNotExist as ex:
                 resp = rc.NOT_FOUND
                 resp.content = 'Could not find "%s" in "%s"' % (role, game_slug)
@@ -249,7 +268,7 @@ class PeriodHandler(AnonymousBaseHandler):
             period.save()
 
             try:
-                player = self._set_player_state(game_slug, role, 'step2')
+                self._set_player_state(game_slug, role, 'step2')
             except Player.DoesNotExist as ex:
                 resp = rc.NOT_FOUND
                 resp.content = 'Could not find "%s" in "%s"' % (role, game_slug)
@@ -266,11 +285,35 @@ class PeriodHandler(AnonymousBaseHandler):
             move shipment amount to downstream role
             """
             try:
-                player = self._set_player_state(game_slug, role, 'ship')
+                upstream_player = _get_upstream_player()
             except Player.DoesNotExist as ex:
-                resp = rc.NOT_FOUND
-                resp.content = 'Could not find "%s" in "%s"' % (role, game_slug)
+                resp = rc.BAD_REQUEST
+                resp.content = 'Could not find upstream role for "%s"' % (role,)
                 return resp
+
+            if upstream_player.current_state != 'step2':
+                resp = rc.BAD_REQUEST
+                resp.content = 'Cannot ship when current state is "%s"' % (upstream_player.current_state,)
+                return resp
+
+            data = request.data
+            period = _get_current_period()
+
+            try:
+                if period.shipment_2 is None:
+                    period.shipment_2 = data['shipment_2']
+                else:
+                    period.shipment_stash = data['shipment_2']
+            except KeyError as ex:
+                resp = rc.BAD_REQUEST
+                resp.content = 'Missing "shipment_2" in data'
+                return resp
+
+            try:
+                if role != 'retailer':
+                    self._set_player_state(game_slug, upstream_player.role, 'ship')
+                else:
+                    self._set_player_state(game_slug, role, 'ship')
             except InvalidStateChange as ex:
                 resp = rc.BAD_REQUEST
                 resp.content = ex.value
@@ -283,7 +326,7 @@ class PeriodHandler(AnonymousBaseHandler):
             move order amount to upstream role
             """
             try:
-                player = self._set_player_state(game_slug, role, 'ship')
+                self._set_player_state(game_slug, role, 'ship')
             except Player.DoesNotExist as ex:
                 resp = rc.NOT_FOUND
                 resp.content = 'Could not find "%s" in "%s"' % (role, game_slug)

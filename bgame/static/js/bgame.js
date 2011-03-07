@@ -33,7 +33,7 @@ var DEBUG = true;
         this.currentPeriod = 0;
         this.periodObj = null;
 
-        this.BUTTONS = ['start-btn', 'step1-btn', 'step2-btn', 'ship-btn', 'order-btn'];
+        this.BUTTONS = ['start-btn', 'step1-btn', 'step2-btn', 'ship-btn', 'step3-btn', 'order-btn'];
         this.currentBtn = 0; // index of BUTTONS
 
         this.initUI();
@@ -81,6 +81,10 @@ var DEBUG = true;
             case 'step2-btn':
                 console.log('clicked step2');
                 this.step2();
+            break;
+            case 'ship-btn':
+                console.log('clicked ship');
+                this.ship();
             break;
         }
     };
@@ -243,11 +247,38 @@ var DEBUG = true;
         });
     };
 
+    Beergame.prototype.ship = function() {
+        // ship to downstream
+        var that = this, downStreamRole = this._getDownStreamRole(this.role),
+            shipment = $('#amt-to-ship').val(), data;
+
+        data = JSON.stringify({
+                                shipment_2: shipment
+                            });
+        this.doBtnAjax(this._buildUrl(this.gameSlug, downStreamRole, this.currentPeriod) + '?step=ship',
+                        'PUT', data, 'text', function(data, textStatus, xhr) {
+            // TODO do we need to do anything after we ship?
+        });
+    };
+
     Beergame.prototype.incrPeriod = function() {
         var per = $('#period');
         this.currentPeriod += 1;
 
         per.text(this.currentPeriod);
+    };
+
+    Beergame.prototype._getDownStreamRole = function(role) {
+        var ROLES = ['factory', 'distributor', 'wholesaler', 'retailer'], curIndex, nextIndex;
+
+        curIndex = $.inArray(role, ROLES);
+        nextIndex = curIndex + 1;
+
+        if (nextIndex != ROLES.length) {
+            return ROLES[nextIndex];
+        } else {
+            return role;
+        }
     };
 
     window.Beergame = Beergame;

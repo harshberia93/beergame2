@@ -136,9 +136,11 @@ div.instructions {
 }
 
 div#period-table table {
+    border-collapse: collapse;
     font-size: 9pt;
 }
-div#period-table th, td {
+div#period-table th, div#period-table td {
     border: 1px solid;
+    text-align: center;
     width: 20px;
 }

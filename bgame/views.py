@@ -29,7 +29,7 @@ def html(request):
                                         context_instance=RequestContext(request))
 
         if data['template'] == 'period_listing':
-            periods = Period.objects.filter(player__game__game_slug=data['game_slug']).filter(player__role=data['role']).exclude(number=0)
+            periods = Period.objects.filter(player__game__game_slug=data['game_slug']).filter(player__role=data['role']).exclude(number=0).order_by('-number')
             print 'number of periods found: %d' % (periods.count(),)
             return render_to_response('period_listing.html', {'periods': periods}, context_instance=RequestContext(request))
 

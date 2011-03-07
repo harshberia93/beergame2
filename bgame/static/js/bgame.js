@@ -90,6 +90,10 @@ var DEBUG = true;
                 console.log('clicked step3');
                 this.step3();
             break;
+            case 'order-btn':
+                console.log('clicked order');
+                this.order();
+            break;
         }
     };
 
@@ -274,6 +278,22 @@ var DEBUG = true;
         });
     };
 
+    Beergame.prototype.order = function() {
+        var that = this;
+
+        var that = this, upStreamRole = this._getUpStreamRole(this.role),
+            order = $('#amt-to-order').val(), data;
+
+        data = JSON.stringify({
+                                order_2: order
+                            });
+        this.doBtnAjax(this._buildUrl(this.gameSlug, upStreamRole, this.currentPeriod) + '?step=order',
+                        'PUT', data, 'text', function(data, textStatus, xhr) {
+            // TODO do we need to do anything after we order?
+        });
+
+    };
+
     Beergame.prototype.incrPeriod = function() {
         var per = $('#period');
         this.currentPeriod += 1;
@@ -289,6 +309,19 @@ var DEBUG = true;
 
         if (nextIndex != ROLES.length) {
             return ROLES[nextIndex];
+        } else {
+            return role;
+        }
+    };
+
+    Beergame.prototype._getUpStreamRole = function(role) {
+        var ROLES = ['factory', 'distributor', 'wholesaler', 'retailer'], curIndex, prevIndex;
+
+        curIndex = $.inArray(role, ROLES);
+        prevIndex = curIndex - 1;
+
+        if (prevIndex >= 0) {
+            return ROLES[prevIndex];
         } else {
             return role;
         }

@@ -219,6 +219,23 @@ class PeriodHandler(AnonymousBaseHandler):
 
             return Player.objects.filter(game__game_slug=game_slug).get(role=upstream_role)
 
+        def _get_downstream_player():
+            """
+            Can raise the following exception:
+                * InvalidRole
+            """
+            try:
+                role_index = [xx for xx, yy in enumerate(ROLES) if yy[0] == role][0]
+            except KeyError as ex:
+                raise InvalidRole('The role "%s" does not exist', (role,))
+
+            if role_index != len(ROLES) - 1:
+                downstream_role = ROLES[role_index + 1][0]
+            else:
+                raise InvalidRole('Should never order from retailer!')
+
+
+            return Player.objects.filter(game__game_slug=game_slug).get(role=downstream_role)
 
         def step1():
             """
@@ -325,12 +342,37 @@ class PeriodHandler(AnonymousBaseHandler):
             """
             move order amount to upstream role
             """
+
             try:
-                self._set_player_state(game_slug, role, 'ship')
+                downstream_player = _get_downstream_player()
             except Player.DoesNotExist as ex:
-                resp = rc.NOT_FOUND
-                resp.content = 'Could not find "%s" in "%s"' % (role, game_slug)
+                resp = rc.BAD_REQUEST
+                resp.content = 'Could not find downstream role for "%s"' % (role,)
                 return resp
+
+            if downstream_player.current_state != 'step3':
+                resp = rc.BAD_REQUEST
+                resp.content = 'Cannot order when current state is "%s"' % (downstream_player.current_state,)
+                return resp
+
+            data = request.data
+            period = _get_current_period()
+
+            try:
+                if period.order_2 is None:
+                    period.order_2 = data['order_2']
+                else:
+                    period.order_stash = data['order_2']
+            except KeyError as ex:
+                resp = rc.BAD_REQUEST
+                resp.content = 'Missing "order_2" in data'
+                return resp
+
+            try:
+                if role != 'factory':
+                    self._set_player_state(game_slug, downstream_player.role, 'order')
+                else:
+                    self._set_player_state(game_slug, role, 'order')
             except InvalidStateChange as ex:
                 resp = rc.BAD_REQUEST
                 resp.content = ex.value

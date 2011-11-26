@@ -1,4 +1,5 @@
 from datetime import datetime
+from decimal import Decimal
 from django.db import IntegrityError
 from django.core.exceptions import ValidationError
 from piston.handler import BaseHandler, AnonymousBaseHandler
@@ -401,46 +402,79 @@ class PeriodHandler(AnonymousBaseHandler):
 
             return rc.ALL_OK
 
+        def _set_period_costs(period):
+            period.current_cost = period.inventory * .5 + period.backlog
+            period.cumulative_cost += Decimal(period.current_cost)
+
+        def _set_completion_time(period):
+            period.completion_time = datetime.now()
+
         def order():
             """
             move order amount to upstream role
             """
 
             try:
-                # the factory orders from itself
-                if role == 'factory_self':
-                    downstream_player = Player.objects.filter(game__game_slug=game_slug).get(role='factory')
-                else:
-                    downstream_player = _get_downstream_player()
+                current_player = _get_current_player()
             except Player.DoesNotExist as ex:
                 resp = rc.BAD_REQUEST
-                resp.content = 'Could not find downstream role for "%s"' % (role,)
+                resp.content = 'Could not find player "%s"' % (role,)
                 return resp
 
-            if downstream_player.current_state != 'step3':
+            # the factory orders from itself
+            if role == 'factory':
+                upstream_player = current_player
+            else:
+                try:
+                    upstream_player = _get_upstream_player()
+                except Player.DoesNotExist as ex:
+                    resp = rc.BAD_REQUEST
+                    resp.content = 'Could not find upstream role for "%s"' % (role,)
+                    return resp
+
+            if upstream_player.current_state != 'step3':
                 resp = rc.BAD_REQUEST
-                resp.content = 'Cannot order when current state is "%s"' % (downstream_player.current_state,)
+                resp.content = 'Cannot order when current state is "%s"' % (upstream_player.current_state,)
                 return resp
 
             data = request.data
-            period = _get_current_period()
 
+            # record the order with the current role
+            cur_period = _get_current_period()
+            cur_period.order = data['order_2']
+
+            _set_period_costs(cur_period)
+            _set_completion_time(cur_period)
+
+            cur_period.save()
+
+            if role == 'factory':
+                up_period = cur_period
+            else:
+                up_period = _get_upstream_period()
+
+            # add order to upstream role's order_2
             try:
-                if period.order_2 is None:
-                    period.order_2 = data['order_2']
+                if up_period.order_2 is None:
+                    up_period.order_2 = data['order_2']
                 else:
-                    period.order_stash = data['order_2']
+                    up_period.order_stash = data['order_2']
+
+                up_period.save()
+
             except KeyError as ex:
                 resp = rc.BAD_REQUEST
                 resp.content = 'Missing "order_2" in data'
                 return resp
 
             try:
-                self._set_player_state(game_slug, downstream_player.role, 'order')
+                self._set_player_state(game_slug, current_player.role, 'order')
             except InvalidStateChange as ex:
                 resp = rc.BAD_REQUEST
                 resp.content = ex.value
                 return resp
+
+            # TODO wait for other players to finish
 
             return rc.ALL_OK
 

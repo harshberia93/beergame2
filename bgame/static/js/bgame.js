@@ -341,17 +341,14 @@ var DEBUG = true;
     };
 
     Beergame.prototype.order = function() {
-        var that = this;
+        var that = this, order = $('#amt-to-order').val(), data;
 
-        var that = this, upStreamRole = (this.role == 'factory') ? 'factory_self' : this._getUpStreamRole(this.role),
-            order = $('#amt-to-order').val(), data;
+        data = JSON.stringify({ order_2: order });
 
-        data = JSON.stringify({
-                                order_2: order
-                            });
-        this.doBtnAjax(this._buildUrl(this.gameSlug, upStreamRole, this.currentPeriod) + '?step=order',
+        this.doBtnAjax(this._buildUrl(this.gameSlug, this.role, this.currentPeriod) + '?step=order',
                         'PUT', data, 'text', function(data, textStatus, xhr) {
             // TODO do we need to do anything after we order?
+            // Yes, wait for the other teams to finish!
         });
 
     };

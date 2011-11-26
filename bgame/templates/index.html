@@ -16,13 +16,15 @@
 {% block content %}
     {% if user.is_authenticated %}
         <div id="add-game">
-            <ul id="add-game-form">
-                {{ form.as_ul }}
-                <li><input type="submit" id="add-game-btn" value="Add Game" /></li>
-                <li>
-                    <span id="loading" class="hidden"><img src="{{ STATIC_URL }}/img/loading.gif" /></span>
-                </li>
-            </ul>
+            <form id="add-game-form">
+                <ul>
+                    {{ form.as_ul }}
+                    <li><input type="submit" id="add-game-btn" value="Add Game" /></li>
+                    <li>
+                        <span id="loading" class="hidden"><img src="{{ STATIC_URL }}/img/loading.gif" /></span>
+                    </li>
+                </ul>
+            </form>
         </div>
     {% endif %}
     <div id="game-listing-wrapper">

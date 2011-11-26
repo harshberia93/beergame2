@@ -40,27 +40,27 @@ p#role, p#period, p#total-cost {
 div#wrapper {
     left: 50%;
     margin-left: -500px;
-    position: absolute; 
-    width: 1000px;  
+    position: absolute;
+    width: 1000px;
 }
 
-ul#add-game-form {
+form#add-game-form ul {
     padding: 0;
     text-align: center;
 }
 
-ul#add-game-form li {
-    display: inline; 
+form#add-game-form ul li {
+    display: inline;
 }
 
 input#id_num_periods {
-    width: 2em; 
+    width: 2em;
 }
 
 /* Lists the available games on the frontpage */
 table#game-listing {
     border-spacing: 0;
-    width: 100%; 
+    width: 100%;
 }
 
 table#game-listing th {
@@ -70,7 +70,7 @@ table#game-listing th {
 }
 
 .hidden {
-    display: none;
+    visibility: hidden;
 }
 
 .clear {

@@ -50,6 +50,8 @@ var DEBUG = true;
     }
 
     Beergame.prototype.init = function() {
+        var self = this;
+
         this.ui = new GameUI();
 
         var locPath = location.pathname.split('/'), params, that = this;
@@ -66,7 +68,10 @@ var DEBUG = true;
 
         $('.button').live('click', $.proxy(this.initButtonHandlers, this));
 
-        $('#add-game-btn').live('click', $.proxy(this.createGame, this));
+        $('#add-game-form').on('submit', function(evt) {
+            evt.preventDefault();
+            self.createGame();
+        });
 
     };
 
@@ -224,7 +229,7 @@ var DEBUG = true;
     };
 
     Beergame.prototype.createGame = function() {
-        var that = this, groupName = $('#id_group_name').val(),
+        var that = this, nameElm = $('#id_group_name'), groupName = nameElm.val(),
             numPeriods = $('#id_num_periods').val(),
             data = JSON.stringify({
                         group_name: groupName,
@@ -232,6 +237,8 @@ var DEBUG = true;
                     });
 
         this.doAjax('/api/games/', 'POST', data, 'text', function(data, textStatus, xhr) {
+            // clear group name
+            nameElm.val('');
             that._addGame();
         });
     };

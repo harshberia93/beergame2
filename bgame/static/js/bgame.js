@@ -23,15 +23,41 @@ var DEBUG = true;
 
 (function($) {
 
+    // GameUI interacts with the user interface of the game.
+    function GameUI(opts) {
+        this.opts = opts;
+    }
+
+    GameUI.prototype._getPeriod = function() {
+        // TODO should we get this from the server?
+        var periodTxt = $('#period').text(), parsedPeriod = parseInt(periodTxt, 10);
+
+        if (isNaN(parsedPeriod)) {
+            return 0;
+        } else {
+            return parsedPeriod;
+        }
+    };
+
+
+    function Admin(opts) {
+        this.opts = opts;
+    }
+
+    // Beergame controls the game play by communicating with the
+    // server and controlling the overall flow of the game.
     function Beergame (opts) {
     }
 
     Beergame.prototype.init = function() {
+        this.ui = new GameUI();
+
         var locPath = location.pathname.split('/'), params, that = this;
         this.gameSlug = locPath[2];
         this.role = locPath[3];
-        this.currentPeriod = 0;
+        this.currentPeriod = this.ui._getPeriod();
         this.periodObj = null;
+
 
         this.BUTTONS = ['start-btn', 'step1-btn', 'step2-btn', 'ship-btn', 'step3-btn', 'order-btn'];
         this.currentBtn = 0; // index of BUTTONS
@@ -56,6 +82,9 @@ var DEBUG = true;
             url += 'periods/' + currentPeriod + '/';
         }
         return url;
+    };
+
+    Beergame.prototype._getPeriod = function() {
     };
 
     Beergame.prototype._getCurBtnId = function() {

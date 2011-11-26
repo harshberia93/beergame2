@@ -47,7 +47,7 @@ class Player(models.Model):
         return ret
 
     def __unicode__(self):
-        return '%s playing in %s' % (self.role, self.game.name)
+        return '%s playing in %s' % (self.role, self.game.group_name)
 
 
 class Game(models.Model):

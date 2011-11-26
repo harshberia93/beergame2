@@ -2,22 +2,29 @@
 
 {% block header %}
     <div id="top-nav">
-        <a href="">Sign In</a>
+        {% if user.is_authenticated %}
+            Signed in as <strong>{{ user.username }}</strong>
+            | <a href="/admin">Admin</a> | <a href="/admin/logout/">Logout</a>
+        {% else %}
+            <a href="/admin/login/">Sign In</a>
+        {% endif %}
     </div>
 
     <img src="{{ STATIC_URL }}img/beergame-logo.gif" />
 {% endblock %}
 
 {% block content %}
-    <div id="add-game">
-        <ul id="add-game-form"> 
-            {{ form.as_ul }}
-            <li><input type="submit" id="add-game-btn" value="Add Game" /></li>
-            <li>
-                <span id="loading" class="hidden"><img src="{{ STATIC_URL }}/img/loading.gif" /></span>
-            </li>
-        </ul>
-    </div>
+    {% if user.is_authenticated %}
+        <div id="add-game">
+            <ul id="add-game-form">
+                {{ form.as_ul }}
+                <li><input type="submit" id="add-game-btn" value="Add Game" /></li>
+                <li>
+                    <span id="loading" class="hidden"><img src="{{ STATIC_URL }}/img/loading.gif" /></span>
+                </li>
+            </ul>
+        </div>
+    {% endif %}
     <div id="game-listing-wrapper">
         {% include "game_listing.html" %}
     </div>

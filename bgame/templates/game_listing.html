@@ -2,7 +2,9 @@
     <tr>
         <th>Group</th>
         <th>Click Role to Begin</th>
+        {% if user.is_authenticated %}
         <th>Reports</th>
+        {% endif %}
     </tr>
 {% for game in games %}
     <tr class="game {% cycle 'odd' 'even' %}">
@@ -12,7 +14,9 @@
                 <a href="{% url game game.game_slug role.0 %}">{{ role.1 }}</a>
                 {% if not forloop.last %} | {% endif %}
             {% endfor %}
+        {% if user.is_authenticated %}
         <td>[Chart] | [Spreadsheet]</td>
+        {% endif %}
     </tr>
 {% endfor %}
 </table>

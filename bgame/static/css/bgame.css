@@ -20,7 +20,7 @@ div#logo {
 }
 
 div#status, div#cost {
-    float: left; 
+    float: left;
     margin: 0 0 0 100px;
     padding: 10px 20px 20px 20px;
     text-align: left;

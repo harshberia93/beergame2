@@ -50,6 +50,34 @@ class GameHandler(AnonymousBaseHandler):
             return resp
 
         return rc.CREATED
+#
+# decorator -
+#   requirements: first three arguments to decorated function must be
+#                 request, game_slug, role
+#
+def update_last_activity(fn):
+    def inner_func(*args, **kwargs):
+        try:
+            game_slug = kwargs['game_slug']
+            role = kwargs['role']
+        except:
+            # TODO how to handle internal errors?
+            pass
+
+        try:
+            player = Player.objects.filter(game__game_slug=game_slug).get(role=role)
+        except Player.DoesNotExist:
+            resp = rc.NOT_FOUND
+            resp.content = 'Could not find Player in "%s" with role "%s"' % (game_slug, role)
+            return resp
+
+        player.last_activity = datetime.now()
+        player.save()
+
+        print "updated last_activity"
+
+        return fn(*args, **kwargs)
+    return inner_func
 
 class PlayerHandler(AnonymousBaseHandler):
     model = Player
@@ -89,6 +117,7 @@ class PeriodHandler(AnonymousBaseHandler):
                 'shipment_stash', 'shipped', 'order', 'current_cost', 'cumulative_cost',)
     allowed_methods = ('GET', 'POST', 'PUT',)
 
+    @update_last_activity
     def read(self, request, game_slug, role, number=None):
         base = Period.objects.all()
 
@@ -114,6 +143,7 @@ class PeriodHandler(AnonymousBaseHandler):
 
         return base
 
+    @update_last_activity
     def create(self, request, game_slug, role):
         """
         Creates a Period object from POST.  This is the action
@@ -189,6 +219,7 @@ class PeriodHandler(AnonymousBaseHandler):
         player.current_state = state
         player.save()
 
+    @update_last_activity
     def update(self, request, game_slug, role, number):
         step = request.GET['step']
         if not step:
@@ -218,6 +249,11 @@ class PeriodHandler(AnonymousBaseHandler):
 
 
             return Player.objects.filter(game__game_slug=game_slug).get(role=upstream_role)
+
+        def _get_upstream_period():
+            player = _get_upstream_player()
+            # TODO make more robust
+            return Period.objects.filter(player=player).get(number=number)
 
         def _get_downstream_player():
             """
@@ -299,10 +335,12 @@ class PeriodHandler(AnonymousBaseHandler):
 
         def ship():
             """
-            move shipment amount to downstream role
+            accept shipment from upstream player
             """
             try:
                 upstream_player = _get_upstream_player()
+                log.debug('shipping to upstream player: %s' % (upstream_player.role,))
+
             except Player.DoesNotExist as ex:
                 resp = rc.BAD_REQUEST
                 resp.content = 'Could not find upstream role for "%s"' % (role,)
@@ -321,10 +359,16 @@ class PeriodHandler(AnonymousBaseHandler):
                     period.shipment_2 = data['shipment_2']
                 else:
                     period.shipment_stash = data['shipment_2']
+                period.save()
             except KeyError as ex:
                 resp = rc.BAD_REQUEST
                 resp.content = 'Missing "shipment_2" in data'
                 return resp
+
+            # remove shipment from inventory
+            up_period = _get_upstream_period()
+            up_period.inventory -= int(data['shipment_2'])
+            up_period.save()
 
             try:
                 if role != 'retailer':

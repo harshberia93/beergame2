@@ -28,17 +28,43 @@ var DEBUG = true;
         this.opts = opts;
     }
 
-    GameUI.prototype._getPeriod = function() {
+   /**
+    * Get the current period as an integer.
+    */
+    GameUI.prototype.getPeriod = function() {
         // TODO should we get this from the server?
-        var periodTxt = $('#period').text(), parsedPeriod = parseInt(periodTxt, 10);
 
-        if (isNaN(parsedPeriod)) {
+        var period = this._getIntFromElm('#period');
+
+        // At the beginning of the game, we display Just Started.
+        // If it is the beginning the period number is 0.
+        if (isNaN(period)) {
             return 0;
         } else {
-            return parsedPeriod;
+            return period;
         }
     };
 
+    /**
+     * Modifies inventory
+     * @param {integer} delta Amount positive or negative by which to change inventory.
+     */
+    GameUI.prototype.modInv = function(delta) {
+        var elm = $('#inv-amt'), amt = this._getIntFromElm(elm);
+        elm.text(amt+delta);
+    };
+
+    /**
+     * Get the text of an element and convert it to an integer.
+     * @param {string or jQuery object} selector The jQuery selector or jQuery object of an element.
+     * @returns {integer} The text value of the element converted to an integer.
+     */
+    GameUI.prototype._getIntFromElm = function(selector) {
+        if (selector instanceof jQuery) {
+            return parseInt(selector.text(), 10);
+        }
+        return parseInt($(selector).text(), 10);
+    };
 
     function Admin(opts) {
         this.opts = opts;
@@ -57,7 +83,7 @@ var DEBUG = true;
         var locPath = location.pathname.split('/'), params, that = this;
         this.gameSlug = locPath[2];
         this.role = locPath[3];
-        this.currentPeriod = this.ui._getPeriod();
+        this.currentPeriod = this.ui.getPeriod();
         this.periodObj = null;
 
 
@@ -87,9 +113,6 @@ var DEBUG = true;
             url += 'periods/' + currentPeriod + '/';
         }
         return url;
-    };
-
-    Beergame.prototype._getPeriod = function() {
     };
 
     Beergame.prototype._getCurBtnId = function() {
@@ -293,7 +316,7 @@ var DEBUG = true;
 
     Beergame.prototype.ship = function() {
         // ship to downstream
-        var that = this, downStreamRole = this._getDownStreamRole(this.role),
+        var self = this, downStreamRole = this._getDownStreamRole(this.role),
             shipment = $('#amt-to-ship').val(), data;
 
         data = JSON.stringify({
@@ -301,23 +324,26 @@ var DEBUG = true;
                             });
         this.doBtnAjax(this._buildUrl(this.gameSlug, downStreamRole, this.currentPeriod) + '?step=ship',
                         'PUT', data, 'text', function(data, textStatus, xhr) {
-            // TODO do we need to do anything after we ship?
+            self.ui.modInv(-shipment);
         });
     };
 
     Beergame.prototype.step3 = function() {
-        var that = this;
+        var self = this;
 
-        this.doBtnAjax('/g/html/' + '?template=period_listing&game_slug=' + this.gameSlug + '&role=' + this.role,
-                        'GET', '', 'text', function(data, textStatus, xhr) {
-            $('#period-table').html(data);
+        this.doBtnAjax(this._buildUrl(this.gameSlug, this.role, this.currentPeriod) + '?step=3',
+                        'PUT', '', 'text', function(data, textStatus, xhr) {
+            self.doBtnAjax('/g/html/' + '?template=period_listing&game_slug=' + self.gameSlug + '&role=' + self.role,
+                            'GET', '', 'text', function(data, textStatus, xhr) {
+                $('#period-table').html(data);
+            });
         });
     };
 
     Beergame.prototype.order = function() {
         var that = this;
 
-        var that = this, upStreamRole = this._getUpStreamRole(this.role),
+        var that = this, upStreamRole = (this.role == 'factory') ? 'factory_self' : this._getUpStreamRole(this.role),
             order = $('#amt-to-order').val(), data;
 
         data = JSON.stringify({

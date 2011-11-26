@@ -213,7 +213,7 @@ class PeriodHandler(AnonymousBaseHandler):
 
         next_state = Player.STATES[next_state_index][0]
         if next_state != state:
-            raise InvalidStateChange('"%s" is not the next state for "%s" for player "%s" in "%s"' %\
+            raise InvalidStateChange('"%s" is not the next state after "%s" for player "%s" in "%s"' %\
                 (state, player.current_state, player.role, player.game.game_slug))
 
         player.current_state = state
@@ -272,6 +272,11 @@ class PeriodHandler(AnonymousBaseHandler):
 
 
             return Player.objects.filter(game__game_slug=game_slug).get(role=downstream_role)
+        def _get_current_player():
+            """
+            Get current player object
+            """
+            return Player.objects.filter(game__game_slug=game_slug).get(role=role)
 
         def step1():
             """
@@ -368,6 +373,7 @@ class PeriodHandler(AnonymousBaseHandler):
             # remove shipment from inventory
             up_period = _get_upstream_period()
             up_period.inventory -= int(data['shipment_2'])
+            up_period.shipped = data['shipment_2']
             up_period.save()
 
             try:
@@ -382,13 +388,30 @@ class PeriodHandler(AnonymousBaseHandler):
 
             return rc.ALL_OK
 
+        def step3():
+            player = _get_current_player()
+
+            if player.current_state != 'ship':
+                resp = rc.BAD_REQUEST
+                resp.content = 'Cannot process Step 3 when current state is "%s"' % (player.current_state,)
+                return resp
+
+            player.current_state = 'step3'
+            player.save()
+
+            return rc.ALL_OK
+
         def order():
             """
             move order amount to upstream role
             """
 
             try:
-                downstream_player = _get_downstream_player()
+                # the factory orders from itself
+                if role == 'factory_self':
+                    downstream_player = Player.objects.filter(game__game_slug=game_slug).get(role='factory')
+                else:
+                    downstream_player = _get_downstream_player()
             except Player.DoesNotExist as ex:
                 resp = rc.BAD_REQUEST
                 resp.content = 'Could not find downstream role for "%s"' % (role,)
@@ -413,10 +436,7 @@ class PeriodHandler(AnonymousBaseHandler):
                 return resp
 
             try:
-                if role != 'factory':
-                    self._set_player_state(game_slug, downstream_player.role, 'order')
-                else:
-                    self._set_player_state(game_slug, role, 'order')
+                self._set_player_state(game_slug, downstream_player.role, 'order')
             except InvalidStateChange as ex:
                 resp = rc.BAD_REQUEST
                 resp.content = ex.value
@@ -428,6 +448,7 @@ class PeriodHandler(AnonymousBaseHandler):
             '1': step1,
             '2': step2,
             'ship': ship,
+            '3': step3,
             'order': order,
         }
 

@@ -343,45 +343,52 @@ class PeriodHandler(AnonymousBaseHandler):
             """
             accept shipment from upstream player
             """
-            try:
-                upstream_player = _get_upstream_player()
-                log.debug('shipping to upstream player: %s' % (upstream_player.role,))
-
-            except Player.DoesNotExist as ex:
-                resp = rc.BAD_REQUEST
-                resp.content = 'Could not find upstream role for "%s"' % (role,)
-                return resp
-
-            if upstream_player.current_state != 'step2':
-                resp = rc.BAD_REQUEST
-                resp.content = 'Cannot ship when current state is "%s"' % (upstream_player.current_state,)
-                return resp
-
             data = request.data
-            period = _get_current_period()
-
-            try:
-                if period.shipment_2 is None:
-                    period.shipment_2 = data['shipment_2']
-                else:
-                    period.shipment_stash = data['shipment_2']
-                period.save()
-            except KeyError as ex:
+            if data['shipment_2'] == '':
                 resp = rc.BAD_REQUEST
-                resp.content = 'Missing "shipment_2" in data'
+                resp.content = 'Shipment was left blank.'
                 return resp
+
+            cur_player = _get_current_player()
+
+            if role == 'retailer':
+                downstream_player = cur_player
+            else:
+                try:
+                    downstream_player = _get_downstream_player()
+                except Player.DoesNotExist as ex:
+                    resp = rc.BAD_REQUEST
+                    resp.content = 'Could not find downstream role for "%s"' % (role,)
+                    return resp
+
+            log.debug('%s is shipping to downstream player: %s' % (role, downstream_player.role,))
+
+            if cur_player.current_state != 'step2':
+                resp = rc.BAD_REQUEST
+                resp.content = 'Cannot ship when current state is "%s"' % (cur_player.current_state,)
+                return resp
+
+            if role != 'retailer':
+                down_period = _get_downstream_period()
+                try:
+                    if down_period.shipment_2 is None:
+                        down_period.shipment_2 = data['shipment_2']
+                    else:
+                        down_period.shipment_stash = data['shipment_2']
+                    down_period.save()
+                except KeyError as ex:
+                    resp = rc.BAD_REQUEST
+                    resp.content = 'Missing "shipment_2" in data'
+                    return resp
 
             # remove shipment from inventory
-            up_period = _get_upstream_period()
-            up_period.inventory -= int(data['shipment_2'])
-            up_period.shipped = data['shipment_2']
-            up_period.save()
+            cur_period = _get_current_period()
+            cur_period.inventory -= int(data['shipment_2'])
+            cur_period.shipped = data['shipment_2']
+            cur_period.save()
 
             try:
-                if role != 'retailer':
-                    self._set_player_state(game_slug, upstream_player.role, 'ship')
-                else:
-                    self._set_player_state(game_slug, role, 'ship')
+                self._set_player_state(game_slug, role, 'ship')
             except InvalidStateChange as ex:
                 resp = rc.BAD_REQUEST
                 resp.content = ex.value
@@ -432,9 +439,9 @@ class PeriodHandler(AnonymousBaseHandler):
                     resp.content = 'Could not find upstream role for "%s"' % (role,)
                     return resp
 
-            if upstream_player.current_state != 'step3':
+            if current_player.current_state != 'step3':
                 resp = rc.BAD_REQUEST
-                resp.content = 'Cannot order when current state is "%s"' % (upstream_player.current_state,)
+                resp.content = 'Cannot order when current state is "%s"' % (current_player.current_state,)
                 return resp
 
             data = request.data

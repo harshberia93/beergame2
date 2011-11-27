@@ -316,13 +316,11 @@ var DEBUG = true;
 
     Beergame.prototype.ship = function() {
         // ship to downstream
-        var self = this, downStreamRole = this._getDownStreamRole(this.role),
-            shipment = $('#amt-to-ship').val(), data;
+        var self = this, shipment = $('#amt-to-ship').val(), data;
 
-        data = JSON.stringify({
-                                shipment_2: shipment
-                            });
-        this.doBtnAjax(this._buildUrl(this.gameSlug, downStreamRole, this.currentPeriod) + '?step=ship',
+        data = JSON.stringify({ shipment_2: shipment });
+
+        this.doBtnAjax(this._buildUrl(this.gameSlug, this.role, this.currentPeriod) + '?step=ship',
                         'PUT', data, 'text', function(data, textStatus, xhr) {
             self.ui.modInv(-shipment);
         });

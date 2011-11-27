@@ -24,6 +24,7 @@ div#status, div#cost {
     margin: 0 0 0 100px;
     padding: 10px 20px 20px 20px;
     text-align: left;
+    width: 160px;
 }
 
 p#role-label, p#period-label, p#total-cost-label {
@@ -51,6 +52,10 @@ form#add-game-form ul {
 
 form#add-game-form ul li {
     display: inline;
+}
+
+span#loading {
+    vertical-align: bottom;
 }
 
 input#id_num_periods {

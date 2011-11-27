@@ -174,7 +174,7 @@ var DEBUG = true;
 
         if (textStatus === 'timeout') {
             $.jGrowl('ERROR: Could not connect to server.  Please check your internet connection and try again.');
-        } else if (error === 'BAD REQUEST') {
+        } else if (error === 'BAD REQUEST' || error === 'NOT FOUND') {
             $.jGrowl('ERROR: ' + xhr.responseText, {position: 'bottom-right'});
         }
 

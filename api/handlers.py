@@ -1,6 +1,7 @@
 from datetime import datetime
 from decimal import Decimal
 from django.db import IntegrityError
+from django.db.models import F
 from django.core.exceptions import ValidationError
 from piston.handler import BaseHandler, AnonymousBaseHandler
 from piston.utils import rc, require_mime, require_extended
@@ -256,6 +257,11 @@ class PeriodHandler(AnonymousBaseHandler):
             # TODO make more robust
             return Period.objects.filter(player=player).get(number=number)
 
+        def _get_downstream_period():
+            player = _get_downstream_player()
+            # TODO make more robust
+            return Period.objects.filter(player=player).get(number=number)
+
         def _get_downstream_player():
             """
             Can raise the following exception:
@@ -369,7 +375,12 @@ class PeriodHandler(AnonymousBaseHandler):
                 return resp
 
             if role != 'retailer':
-                down_period = _get_downstream_period()
+                try:
+                    down_period = _get_downstream_period()
+                except Period.DoesNotExist as ex:
+                    resp = rc.BAD_REQUEST
+                    resp.content = '%s has not started the current period.  Try again later.' % (_get_downstream_player().role.title(),)
+                    return resp
                 try:
                     if down_period.shipment_2 is None:
                         down_period.shipment_2 = data['shipment_2']
@@ -420,6 +431,11 @@ class PeriodHandler(AnonymousBaseHandler):
             """
             move order amount to upstream role
             """
+            data = request.data
+            if data['order_2'] == '':
+                resp = rc.BAD_REQUEST
+                resp.content = 'Order amount cannot be blank'
+                return resp
 
             try:
                 current_player = _get_current_player()
@@ -444,8 +460,6 @@ class PeriodHandler(AnonymousBaseHandler):
                 resp.content = 'Cannot order when current state is "%s"' % (current_player.current_state,)
                 return resp
 
-            data = request.data
-
             # record the order with the current role
             cur_period = _get_current_period()
             cur_period.order = data['order_2']
@@ -458,7 +472,12 @@ class PeriodHandler(AnonymousBaseHandler):
             if role == 'factory':
                 up_period = cur_period
             else:
-                up_period = _get_upstream_period()
+                try:
+                    up_period = _get_upstream_period()
+                except Period.DoesNotExist as ex:
+                    resp = rc.NOT_FOUND
+                    resp.content = '%s has not started this period yet.  Try again later' % (upstream_player.role,)
+                    return resp
 
             # add order to upstream role's order_2
             try:
